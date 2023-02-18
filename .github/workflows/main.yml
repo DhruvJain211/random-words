@@ -18,7 +18,7 @@ jobs:
         flutter-version: '3.0.5'
     - run: flutter pub get
     - run: flutter build apk
-   release_assets:
+release_assets:
      name: Release assets
      needs: create_release # we need to know the upload URL
      runs-on: ${{ matrix.config.os }} # we run many different builds
