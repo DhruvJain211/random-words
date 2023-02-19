@@ -42,7 +42,7 @@ jobs:
           flutter-version: '3.0.5'
        - run: flutter pub get
        - run: flutter build apk --split-per-abi
-       - run: apt install tree -y
+       - run: sudo apt install tree -y
        - run: tree build
        # ... whatever build and packaging steps you need here
        # and finally do an upload!
