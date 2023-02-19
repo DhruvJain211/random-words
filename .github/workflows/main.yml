@@ -1,38 +1,48 @@
-name: Greetings
+name: buildapk
 
-on: [push]
+on:
+  push:
+    tags:
+      - 'v[0-9]+.*'
+
 jobs:
-  greeting:
+  create_release:
+    name: Create release
     runs-on: ubuntu-latest
-    permissions:
-      issues: write
-      pull-requests: write
+    # Note this. We are going to use that in further jobs.
+    outputs:
+      upload_url: ${{ steps.create_release.outputs.upload_url }}
     steps:
-    - uses: actions/checkout@v3
-    - uses: actions/setup-java@v2
-      with:
-       distribution: 'zulu'
-       java-version: '11'
-    - uses: subosito/flutter-action@v2
-      with:
-        flutter-version: '3.0.5'
-    - run: flutter pub get
-    - run: flutter build apk
-release_assets:
+      - name: Create release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          draft: false
+          prerelease: false
+  release_assets:
      name: Release assets
      needs: create_release # we need to know the upload URL
-     runs-on: ${{ matrix.config.os }} # we run many different builds
-     strategy:
-       # just an example matrix
-       matrix:
-         config:
-           - os: ubuntu-latest
-           - os: macos-latest
-           - os: windows-latest
+     runs-on: ubuntu-latest
      steps:
        # checkout of cource
        - name: Checkout code
          uses: actions/checkout@v1
+       - uses: actions/checkout@v3
+       - uses: actions/setup-java@v2
+         with:
+          distribution: 'zulu'
+          java-version: '11'
+       - uses: subosito/flutter-action@v2
+         with:
+          flutter-version: '3.0.5'
+       - run: flutter pub get
+       - run: flutter build apk --split-per-abi
+       - run: apt install tree -y
+       - run: tree build
        # ... whatever build and packaging steps you need here
        # and finally do an upload!
        - name: Upload release assets
@@ -45,9 +55,8 @@ release_assets:
            # you like, remember that they need to be different for each platform.
            # You can choose any build matrix parameters. For Rust I use the
            # target triple.
-           asset_name: program-name-${{ matrix.config.os }}
-           # The path to the file you want to upload.
-           asset_path: ./path/to/your/file
+           asset_name: randlike
+           asset_path: ./build/app/outputs/apk/release/app-armeabi-v7a-release.apk
            # probably you will need to change it, but most likely you are
            # uploading a binary file
            asset_content_type: application/octet-stream
